@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       crd_command:
-        description: 'Paste Full Chrome Remote Desktop Command'
+        description: 'Chrome Remote Desktop Command'
         required: true
 
       pin:
@@ -21,24 +21,30 @@ jobs:
       run: |
         choco install chrome-remote-desktop-host -y
 
-    - name: Extract Code And Start CRD
+    - name: Start Chrome Remote Desktop
       shell: powershell
       run: |
-        $fullCommand = "${{ github.event.inputs.crd_command }}"
+        $fullCommand = @"
+${{ github.event.inputs.crd_command }}
+"@
+
         $pin = "${{ github.event.inputs.pin }}"
 
         if ($fullCommand -match '--code="([^"]+)"') {
             $code = $matches[1]
-        } else {
+        }
+        else {
             Write-Error "CRD code not found!"
             exit 1
         }
 
+        Write-Host "Starting Chrome Remote Desktop..."
+
         & "${Env:PROGRAMFILES(X86)}\Google\Chrome Remote Desktop\CurrentVersion\remoting_start_host.exe" `
-        --code="$code" `
-        --redirect-url="https://remotedesktop.google.com/_/oauthredirect" `
-        --name=$Env:COMPUTERNAME `
-        --pin="$pin"
+          --code="$code" `
+          --redirect-url="https://remotedesktop.google.com/_/oauthredirect" `
+          --name=$Env:COMPUTERNAME `
+          --pin="$pin"
 
     - name: Keep Alive
       run: |
